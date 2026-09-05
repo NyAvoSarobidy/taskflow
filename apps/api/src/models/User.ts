@@ -1,4 +1,3 @@
-// apps/api/src/models/User.ts
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IUser extends Document {
@@ -6,7 +5,6 @@ export interface IUser extends Document {
   password: string;
   name: string;
   createdAt: Date;
-  // OTP
   otpCode?: string;
   otpExpires?: Date;
   isVerified: boolean;
@@ -35,7 +33,6 @@ const userSchema = new Schema<IUser>(
       type: Date,
       default: Date.now,
     },
-    // Champs OTP
     otpCode: {
       type: String,
       required: false,

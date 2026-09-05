@@ -11,7 +11,7 @@ dotenv.config();
 
 const app = express();
 
-// ---- Middlewares globaux ----
+//Middlewares globaux
 app.use(helmet());
 app.use(
   cors({
@@ -22,18 +22,18 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// ---- Route de santé (health check) ----
+//Route de santé (health check)
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// ---- Routes métier ----
+//Routes métier
 app.use("/api/auth", authRoutes);
 
-// ---- Swagger UI ----
+//Swagger UI
 setupSwagger(app);
 
-// ---- Gestion d'erreurs centralisée ----
+//Gestion d'erreurs centralisée
 app.use(
   (
     err: Error & { statusCode?: number; details?: unknown },

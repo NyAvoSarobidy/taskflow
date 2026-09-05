@@ -1,4 +1,3 @@
-// apps/api/src/routes/authRoutes.ts
 import { Router } from "express";
 import {
   register,

@@ -1,4 +1,3 @@
-// apps/api/src/services/emailService.ts
 import { Resend } from "resend";
 import dotenv from "dotenv";
 

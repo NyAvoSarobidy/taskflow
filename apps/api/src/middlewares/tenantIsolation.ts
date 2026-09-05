@@ -1,4 +1,3 @@
-// apps/api/src/middlewares/tenantIsolation.ts
 import { Request, Response, NextFunction } from "express";
 import Membership from "../models/Membership";
 

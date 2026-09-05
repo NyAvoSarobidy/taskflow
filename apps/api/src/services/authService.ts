@@ -1,4 +1,3 @@
-// apps/api/src/services/authService.ts
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import User, { IUser } from "../models/User";
