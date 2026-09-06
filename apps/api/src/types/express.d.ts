@@ -1,4 +1,3 @@
-// Extension des types Express pour req.user et req.tenant
 
 export {};
 declare global {

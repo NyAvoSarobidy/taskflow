@@ -1,4 +1,3 @@
-// apps/api/src/utils/jwt.ts
 import jwt, { SignOptions } from "jsonwebtoken";
 import dotenv from "dotenv";
 

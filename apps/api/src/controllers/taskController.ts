@@ -10,7 +10,7 @@ export async function createTask(
   try {
     const projectId = req.params.projectId as string;
     const { title, description, assignedTo, dueDate } = req.body;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -37,7 +37,7 @@ export async function listTasks(
 ) {
   try {
     const projectId = req.params.projectId as string;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -63,7 +63,7 @@ export async function getTask(
   try {
     const projectId = req.params.projectId as string;
     const taskId = req.params.taskId as string;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -90,7 +90,7 @@ export async function updateTask(
     const projectId = req.params.projectId as string;
     const taskId = req.params.taskId as string;
     const { title, description, assignedTo, status, dueDate } = req.body;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -127,7 +127,7 @@ export async function deleteTask(
   try {
     const projectId = req.params.projectId as string;
     const taskId = req.params.taskId as string;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -151,7 +151,7 @@ export async function listMyTasks(
   next: NextFunction
 ) {
   try {
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
     const userId = req.user?.userId;
 
     if (!organizationId || !userId) {

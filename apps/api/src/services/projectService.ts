@@ -1,4 +1,4 @@
-// apps/api/src/services/projectService.ts
+
 import Project from "../models/Project";
 import Task from "../models/Task";
 import Subscription from "../models/Subscription";
