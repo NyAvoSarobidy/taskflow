@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 
 import authRoutes from "./routes/authRoutes";
+import projectRoutes from "./routes/projectRoutes";
+import taskRoutes from "./routes/taskRoutes";
 import { setupSwagger } from "./config/swagger";
 
 dotenv.config();
@@ -29,6 +31,8 @@ app.get("/api/health", (_req, res) => {
 
 //Routes métier
 app.use("/api/auth", authRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/tasks", taskRoutes);
 
 //Swagger UI
 setupSwagger(app);
