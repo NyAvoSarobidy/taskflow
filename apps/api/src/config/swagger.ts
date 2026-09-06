@@ -18,6 +18,8 @@ const swaggerSpec = {
   tags: [
     { name: "Health", description: "Santé du serveur" },
     { name: "Auth", description: "Authentification" },
+    { name: "Projects", description: "Gestion des projets" },
+    { name: "Tasks", description: "Gestion des tâches" },
   ],
   paths: {
     "/api/health": {
@@ -277,6 +279,144 @@ const swaggerSpec = {
           },
           "401": { description: "Non authentifié" },
         },
+      },
+    },
+    "/api/projects": {
+      post: {
+        tags: ["Projects"],
+        summary: "Créer un projet",
+        security: [{ cookieAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { type: "object", required: ["name"], properties: { name: { type: "string" } } },
+              example: { name: "Lancement produit" },
+            },
+          },
+        },
+        responses: { "201": { description: "Projet créé" }, "403": { description: "Limite de plan atteinte" } },
+      },
+      get: {
+        tags: ["Projects"],
+        summary: "Lister les projets",
+        security: [{ cookieAuth: [] }],
+        responses: { "200": { description: "Liste des projets" } },
+      },
+    },
+    "/api/projects/{projectId}": {
+      get: {
+        tags: ["Projects"],
+        summary: "Obtenir un projet",
+        security: [{ cookieAuth: [] }],
+        parameters: [{ name: "projectId", in: "path", required: true, schema: { type: "string" } }],
+        responses: { "200": { description: "Projet" }, "404": { description: "Non trouvé" } },
+      },
+      put: {
+        tags: ["Projects"],
+        summary: "Modifier un projet",
+        security: [{ cookieAuth: [] }],
+        parameters: [{ name: "projectId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: { content: { "application/json": { schema: { type: "object", properties: { name: { type: "string" } } } } } },
+        responses: { "200": { description: "Projet mis à jour" }, "404": { description: "Non trouvé" } },
+      },
+      delete: {
+        tags: ["Projects"],
+        summary: "Supprimer un projet",
+        security: [{ cookieAuth: [] }],
+        parameters: [{ name: "projectId", in: "path", required: true, schema: { type: "string" } }],
+        responses: { "200": { description: "Projet supprimé" }, "404": { description: "Non trouvé" } },
+      },
+    },
+    "/api/tasks/projects/{projectId}/tasks": {
+      post: {
+        tags: ["Tasks"],
+        summary: "Créer une tâche",
+        security: [{ cookieAuth: [] }],
+        parameters: [{ name: "projectId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["title"],
+                properties: {
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  assignedTo: { type: "string" },
+                  dueDate: { type: "string", format: "date-time" },
+                },
+              },
+              example: { title: "Finaliser le design", description: "Maquettes Figma", dueDate: "2026-09-10T00:00:00Z" },
+            },
+          },
+        },
+        responses: { "201": { description: "Tâche créée" } },
+      },
+      get: {
+        tags: ["Tasks"],
+        summary: "Lister les tâches d'un projet",
+        security: [{ cookieAuth: [] }],
+        parameters: [{ name: "projectId", in: "path", required: true, schema: { type: "string" } }],
+        responses: { "200": { description: "Liste des tâches" } },
+      },
+    },
+    "/api/tasks/projects/{projectId}/tasks/{taskId}": {
+      get: {
+        tags: ["Tasks"],
+        summary: "Obtenir une tâche",
+        security: [{ cookieAuth: [] }],
+        parameters: [
+          { name: "projectId", in: "path", required: true, schema: { type: "string" } },
+          { name: "taskId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: { "200": { description: "Tâche" }, "404": { description: "Non trouvée" } },
+      },
+      put: {
+        tags: ["Tasks"],
+        summary: "Modifier une tâche",
+        security: [{ cookieAuth: [] }],
+        parameters: [
+          { name: "projectId", in: "path", required: true, schema: { type: "string" } },
+          { name: "taskId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  assignedTo: { type: "string" },
+                  status: { type: "string", enum: ["a_faire", "en_cours", "termine"] },
+                  dueDate: { type: "string", format: "date-time" },
+                },
+              },
+              example: { status: "en_cours" },
+            },
+          },
+        },
+        responses: { "200": { description: "Tâche mise à jour" }, "404": { description: "Non trouvée" } },
+      },
+      delete: {
+        tags: ["Tasks"],
+        summary: "Supprimer une tâche",
+        security: [{ cookieAuth: [] }],
+        parameters: [
+          { name: "projectId", in: "path", required: true, schema: { type: "string" } },
+          { name: "taskId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: { "200": { description: "Tâche supprimée" }, "404": { description: "Non trouvée" } },
+      },
+    },
+    "/api/tasks/my-tasks": {
+      get: {
+        tags: ["Tasks"],
+        summary: "Mes tâches assignées",
+        security: [{ cookieAuth: [] }],
+        responses: { "200": { description: "Tâches assignées à l'utilisateur connecté" } },
       },
     },
   },

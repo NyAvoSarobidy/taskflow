@@ -45,7 +45,7 @@ function clearAuthCookies(res: Response) {
   res.clearCookie(REFRESH_COOKIE_NAME, { path: COOKIE_PATH });
 }
 
-// ---- Controllers ----
+//Controllers 
 
 export async function register(
   req: Request,
