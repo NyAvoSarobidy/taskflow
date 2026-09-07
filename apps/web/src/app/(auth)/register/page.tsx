@@ -8,10 +8,10 @@ import { Eye, EyeOff, User, Mail, Lock, ShieldCheck, Users, Zap } from "lucide-r
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/context/AuthContext";
+import { authApi } from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +25,12 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await register(name, email, password);
+      const response = await authApi.register({ name, email, password });
+      // En mode dev, stocker l'OTP dans sessionStorage
+      if (response.otpCode) {
+        sessionStorage.setItem("dev_otp", response.otpCode);
+        sessionStorage.setItem("dev_otp_email", email);
+      }
       router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
       setError(err.message || "Erreur lors de l'inscription");
@@ -64,7 +69,7 @@ export default function RegisterPage() {
           <div className="mt-8 flex flex-col gap-4">
             {[
               { icon: ShieldCheck, text: "Vos données sont isolées par organisation" },
-              { icon: Users, text: "Invitez vos collabris en quelques clics" },
+              { icon: Users, text: "Invitez vos collaborateurs en quelques clics" },
               { icon: Zap, text: "Simplicité d'utilisation, puissance de l'outil" },
             ].map((item, i) => (
               <motion.div
@@ -123,6 +128,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimum 8 caractères"
+                minLength={8}
                 required
               />
               <button

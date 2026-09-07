@@ -57,7 +57,7 @@ export default function KanbanPage() {
     setIsCreating(true);
     try {
       await tasksApi.create(projectId, { title: newTaskTitle });
-      const data = await tasksApi.listByProject(projectId, organizationId);
+      const data = await tasksApi.listByProject(projectId, organizationId!);
       setTasks(data.tasks as Task[]);
       setIsModalOpen(false);
       setNewTaskTitle("");

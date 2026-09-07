@@ -72,7 +72,7 @@ export async function register(
     }
 
     // Réponse
-    res.status(201).json({
+    const response: any = {
       message:
         "Inscription réussie. Vérifiez votre email pour le code OTP (valable 10 minutes).",
       user: {
@@ -81,7 +81,15 @@ export async function register(
         name: user.name,
         isVerified: user.isVerified,
       },
-    });
+    };
+
+    // En mode dev, inclure l'OTP dans la réponse pour faciliter les tests
+    if (process.env.NODE_ENV !== "production") {
+      response.otpCode = otpCode;
+      console.log(`\n🔑 OTP pour ${user.email} : ${otpCode}\n`);
+    }
+
+    res.status(201).json(response);
   } catch (error) {
     next(error);
   }
@@ -176,9 +184,16 @@ export async function resendOTP(
       );
     }
 
-    res.status(200).json({
+    const response: any = {
       message: "Nouveau code OTP envoyé. Vérifiez votre email.",
-    });
+    };
+
+    if (process.env.NODE_ENV !== "production") {
+      response.otpCode = otpCode;
+      console.log(`\n🔑 OTP pour ${user.email} : ${otpCode}\n`);
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     next(error);
   }

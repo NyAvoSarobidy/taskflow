@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, RefreshCw } from "lucide-react";
+import { Mail, RefreshCw, Copy } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
 
@@ -19,6 +19,19 @@ export default function VerifyOtpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [devOtp, setDevOtp] = useState<string | null>(null);
+
+  // En mode dev, récupérer l'OTP depuis le sessionStorage
+  useEffect(() => {
+    const emailParam = searchParams.get("email");
+    if (emailParam) setEmail(emailParam);
+    
+    const storedOtp = sessionStorage.getItem("dev_otp");
+    const storedEmail = sessionStorage.getItem("dev_otp_email");
+    if (storedOtp && storedEmail === emailParam) {
+      setDevOtp(storedOtp);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +40,8 @@ export default function VerifyOtpPage() {
 
     try {
       await verifyOtp(email, otpCode);
+      sessionStorage.removeItem("dev_otp");
+      sessionStorage.removeItem("dev_otp_email");
       router.push("/today");
     } catch (err: any) {
       setError(err.message || "Code invalide");
@@ -49,10 +64,13 @@ export default function VerifyOtpPage() {
     }
   };
 
-  useEffect(() => {
-    const emailParam = searchParams.get("email");
-    if (emailParam) setEmail(emailParam);
-  }, [searchParams]);
+  const handleCopyOtp = () => {
+    if (devOtp) {
+      navigator.clipboard.writeText(devOtp);
+      setSuccessMessage("Code copié !");
+      setTimeout(() => setSuccessMessage(""), 2000);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-white p-6">
@@ -70,8 +88,39 @@ export default function VerifyOtpPage() {
           Vérifiez votre email
         </h2>
         <p className="mt-1 text-[14px] text-ink-soft">
-          Nous vous avons envoyé un code à 6 chiffres. Entrez-le pour activer votre compte.
+          Nous vous avons envoyé un code à 6 chiffres à <strong>{email}</strong>.
         </p>
+
+        {/* Mode dev : afficher l'OTP */}
+        {devOtp && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="mt-4 rounded-lg bg-blue-veil p-4"
+          >
+            <p className="text-[12px] text-ink-soft mb-1">Mode développement :</p>
+            <div className="flex items-center justify-between">
+              <code className="text-[18px] font-bold tracking-[0.3em] text-blue">
+                {devOtp}
+              </code>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCopyOtp}
+                  className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-[12px] text-ink-soft hover:text-ink"
+                >
+                  <Copy className="h-3 w-3" />
+                  Copier
+                </button>
+                <button
+                  onClick={() => { setOtpCode(devOtp); }}
+                  className="flex items-center gap-1 rounded-lg bg-blue px-2 py-1 text-[12px] text-white hover:bg-blue-press"
+                >
+                  Utiliser
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -81,7 +130,8 @@ export default function VerifyOtpPage() {
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="123456"
-              className="h-14 rounded-lg border border-blue-edge bg-center bg-[length:24px] bg-[repeat-x] bg-[center_left_1rem] pl-4 text-center text-[24px] font-semibold tracking-[0.5em] text-ink placeholder:text-ink-soft/40 focus-visible:outline-2 focus-visible:outline-blue"
+              className="h-14 rounded-lg border border-blue-edge bg-white text-center text-[24px] font-semibold tracking-[0.5em] text-ink placeholder:text-ink-soft/40 focus-visible:outline-2 focus-visible:outline-blue"
+              maxLength={6}
               required
             />
           </div>

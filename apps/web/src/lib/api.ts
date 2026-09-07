@@ -42,6 +42,7 @@ export interface AuthResponse {
     name: string;
     isVerified?: boolean;
   };
+  otpCode?: string;
 }
 
 export interface UserResponse {
