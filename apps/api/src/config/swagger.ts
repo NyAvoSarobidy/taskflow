@@ -21,6 +21,7 @@ const swaggerSpec = {
     { name: "Organizations", description: "Gestion des organisations" },
     { name: "Projects", description: "Gestion des projets" },
     { name: "Tasks", description: "Gestion des tâches" },
+    { name: "Billing", description: "Abonnements et facturation" },
   ],
   paths: {
     "/api/health": {
@@ -586,6 +587,27 @@ const swaggerSpec = {
           { name: "organizationId", in: "query", required: true, schema: { type: "string" } },
         ],
         responses: { "200": { description: "Tâche supprimée" }, "404": { description: "Non trouvée" } },
+      },
+    },
+    "/api/billing/checkout": {
+      post: {
+        tags: ["Billing"],
+        summary: "Créer une session de paiement",
+        description: "Redirige vers Stripe Checkout pour souscrire un abonnement",
+        security: [{ cookieAuth: [] }],
+        parameters: [{ name: "organizationId", in: "query", required: true, schema: { type: "string" } }],
+        requestBody: { content: { "application/json": { schema: { type: "object", required: ["plan"], properties: { plan: { type: "string", enum: ["free", "pro"] } } }, example: { plan: "pro" } } } },
+        responses: { "200": { description: "Session créée" } },
+      },
+    },
+    "/api/billing/portal": {
+      post: {
+        tags: ["Billing"],
+        summary: "Portail de gestion",
+        description: "Redirige vers le portail Stripe pour gérer l'abonnement",
+        security: [{ cookieAuth: [] }],
+        parameters: [{ name: "organizationId", in: "query", required: true, schema: { type: "string" } }],
+        responses: { "200": { description: "URL du portail" } },
       },
     },
   },
