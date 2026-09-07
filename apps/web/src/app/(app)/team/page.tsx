@@ -7,11 +7,10 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
-import { MemberRow } from "@/components/ui/MemberRow";
+import { Avatar } from "@/components/ui/Avatar";
 import { User, UserRole } from "@/types";
-import { invitationsApi } from "@/lib/api";
-import { UserPlus, Mail, ShieldCheck, X, RefreshCw, Clock, CheckCircle, XCircle } from "lucide-react";
-import { mockUsers, mockCurrentUser, mockSubscription, PLAN_LIMITS, SubscriptionPlan } from "@/lib/mock-data";
+import { invitationsApi, membersApi } from "@/lib/api";
+import { UserPlus, Mail, X, RefreshCw } from "lucide-react";
 
 interface Invitation {
   _id: string;
@@ -25,7 +24,7 @@ interface Invitation {
 export default function TeamPage() {
   const router = useRouter();
   const { user, organizationId, isLoading: authLoading } = useAuth();
-  const [members, setMembers] = useState<User[]>(mockUsers);
+  const [members, setMembers] = useState<User[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -33,18 +32,42 @@ export default function TeamPage() {
   const [isInviting, setIsInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
-
-  const maxMembers = PLAN_LIMITS[SubscriptionPlan.FREE].maxMembers;
-  const isLimitReached = members.length >= maxMembers;
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !organizationId) return;
+    if (!user) return;
     
-    // Charger les invitations
-    invitationsApi.list(organizationId)
-      .then((data) => setInvitations(data.invitations || []))
-      .catch(() => setInvitations([]));
+    // Charger les membres
+    if (organizationId) {
+      Promise.all([
+        membersApi.list(organizationId),
+        invitationsApi.list(organizationId),
+      ])
+        .then(([membersData, invData]) => {
+          setMembers(membersData.members || []);
+          setInvitations(invData.invitations || []);
+        })
+        .catch(() => {
+          setMembers([]);
+          setInvitations([]);
+        })
+        .finally(() => setIsLoading(false));
+    }
   }, [user, organizationId]);
+
+  const refreshData = async () => {
+    if (!organizationId) return;
+    try {
+      const [membersData, invData] = await Promise.all([
+        membersApi.list(organizationId),
+        invitationsApi.list(organizationId),
+      ]);
+      setMembers(membersData.members || []);
+      setInvitations(invData.invitations || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +77,7 @@ export default function TeamPage() {
     setInviteSuccess("");
 
     try {
-      const response = await invitationsApi.create({
+      await invitationsApi.create({
         email: inviteEmail,
         role: inviteRole,
         organizationId,
@@ -62,9 +85,7 @@ export default function TeamPage() {
       setInviteSuccess(`Invitation envoyée à ${inviteEmail}`);
       setInviteEmail("");
       setIsInviteOpen(false);
-      // Recharger les invitations
-      const data = await invitationsApi.list(organizationId);
-      setInvitations(data.invitations || []);
+      await refreshData();
     } catch (err: any) {
       setInviteError(err.message || "Erreur lors de l'envoi");
     } finally {
@@ -75,11 +96,7 @@ export default function TeamPage() {
   const handleRevoke = async (invitationId: string) => {
     try {
       await invitationsApi.revoke(invitationId);
-      // Recharger les invitations
-      if (organizationId) {
-        const data = await invitationsApi.list(organizationId);
-        setInvitations(data.invitations || []);
-      }
+      await refreshData();
     } catch (err: any) {
       alert(err.message || "Erreur lors de la révocation");
     }
@@ -88,18 +105,14 @@ export default function TeamPage() {
   const handleResend = async (invitationId: string) => {
     try {
       await invitationsApi.resend(invitationId);
-      // Recharger les invitations
-      if (organizationId) {
-        const data = await invitationsApi.list(organizationId);
-        setInvitations(data.invitations || []);
-      }
+      await refreshData();
       setInviteSuccess("Invitation renvoyée !");
     } catch (err: any) {
       alert(err.message || "Erreur lors du renvoi");
     }
   };
 
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
       <AppLayout breadcrumb="Équipe" title="Chargement...">
         <div className="flex items-center justify-center py-12">
@@ -138,15 +151,33 @@ export default function TeamPage() {
         </div>
 
         {/* Members list */}
-        <div className="rounded-xl border border-line bg-white">
-          {members.map((member) => (
-            <MemberRow
-              key={member._id}
-              user={member}
-              isCurrentUser={member._id === mockCurrentUser._id}
-            />
-          ))}
-        </div>
+        {members.length === 0 ? (
+          <div className="rounded-xl border border-line bg-white p-8 text-center">
+            <p className="text-[14px] text-ink-soft">Aucun membre pour le moment. Invitez des collaborateurs !</p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-line bg-white">
+            {members.map((member) => (
+              <div key={member._id} className="flex items-center gap-4 border-b border-line px-4 py-3 last:border-b-0">
+                <Avatar name={member.name} size="md" />
+                <div className="flex flex-1 flex-col">
+                  <span className="text-[14px] font-medium text-ink">
+                    {member.name}
+                    {member._id === user.userId && (
+                      <span className="ml-2 text-[12px] font-normal text-ink-soft">(Vous)</span>
+                    )}
+                  </span>
+                  <span className="text-[12.5px] text-ink-soft">{member.email}</span>
+                </div>
+                <span className={`rounded-[99px] px-2.5 py-0.5 text-[12px] font-medium ${
+                  member.role === "admin" ? "bg-blue-deep text-white" : "bg-blue-veil text-blue-deep"
+                }`}>
+                  {member.role === "admin" ? "Administrateur" : "Membre"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Pending invitations */}
         {pendingInvitations.length > 0 && (
@@ -185,29 +216,6 @@ export default function TeamPage() {
             ))}
           </div>
         )}
-
-        {/* Limit banner */}
-        {isLimitReached && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl border border-blue-edge bg-blue-veil p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <span className="text-[14px] font-semibold text-ink">
-                  Limite atteinte
-                </span>
-                <span className="text-[13px] text-ink-soft">
-                  Vous avez atteint la limite de {maxMembers} membres du plan gratuit.
-                </span>
-              </div>
-              <Button variant="secondary">
-                Passer au Pro
-              </Button>
-            </div>
-          </motion.div>
-        )}
       </div>
 
       {/* Invite modal */}
@@ -218,9 +226,7 @@ export default function TeamPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg"
           >
-            <h3 className="text-[18px] font-semibold text-ink">
-              Inviter un membre
-            </h3>
+            <h3 className="text-[18px] font-semibold text-ink">Inviter un membre</h3>
             <form onSubmit={handleInvite} className="mt-4 flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <label className="text-[14px] font-medium text-ink">Email</label>

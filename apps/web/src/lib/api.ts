@@ -224,3 +224,9 @@ export const invitationsApi = {
   resend: (invitationId: string) =>
     apiFetch<any>(`/api/invitations/${invitationId}/resend`, { method: "POST" }),
 };
+
+// Members API
+export const membersApi = {
+  list: (organizationId: string) =>
+    apiFetch<any>(`/api/members?organizationId=${organizationId}`),
+};

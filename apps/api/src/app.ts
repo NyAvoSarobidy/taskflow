@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes";
 import billingRoutes from "./routes/billingRoutes";
 import { handleWebhook } from "./controllers/billingController";
 import invitationRoutes from "./routes/invitationRoutes";
+import memberRoutes from "./routes/memberRoutes";
 import organizationRoutes from "./routes/organizationRoutes";
 import projectRoutes from "./routes/projectRoutes";
 import taskRoutes from "./routes/taskRoutes";
@@ -45,6 +46,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/invitations", invitationRoutes);
+app.use("/api/members", memberRoutes);
 app.use("/api/organizations", organizationRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);

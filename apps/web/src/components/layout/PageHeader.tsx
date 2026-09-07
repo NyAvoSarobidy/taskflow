@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Search, Bell, LogOut, User } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/context/AuthContext";
-import { mockCurrentUser } from "@/lib/mock-data";
 
 export function PageHeader({
   breadcrumb,
@@ -51,33 +50,31 @@ export function PageHeader({
             onClick={() => setShowMenu(!showMenu)}
             className="flex items-center gap-2 rounded-lg p-1 hover:bg-blue-veil"
           >
-            <Avatar name={user?.name || mockCurrentUser.name} size="md" />
+            <Avatar name={user?.name || "Utilisateur"} size="md" />
           </button>
 
           {showMenu && (
             <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-white p-1 shadow-lg">
               <div className="border-b border-line px-3 py-2">
                 <span className="text-[14px] font-medium text-ink">
-                  {user?.name || mockCurrentUser.name}
+                  {user?.name || "Utilisateur"}
                 </span>
                 <br />
                 <span className="text-[12.5px] text-ink-soft">
-                  {user?.email || mockCurrentUser.email}
+                  {user?.email || ""}
                 </span>
               </div>
               <a
                 href="/profile"
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-ink hover:bg-blue-veil"
               >
-                <User className="h-4 w-4" />
-                Mon profil
+                <User className="h-4 w-4" /> Mon profil
               </a>
               <button
                 onClick={handleLogout}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-ink hover:bg-blue-veil"
               >
-                <LogOut className="h-4 w-4" />
-                Se déconnecter
+                <LogOut className="h-4 w-4" /> Se déconnecter
               </button>
             </div>
           )}
