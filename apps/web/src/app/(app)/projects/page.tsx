@@ -1,21 +1,75 @@
+// apps/web/src/app/(app)/projects/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Modal } from "@/components/ui/Modal";
 import { Gauge } from "@/components/ui/Gauge";
-import { mockTasks, mockProjects, mockUsers, mockSubscription, mockOrganization, PLAN_LIMITS, SubscriptionPlan, TaskStatus, UserRole } from "@/lib/mock-data";
+import { projectsApi, tasksApi } from "@/lib/api";
+import { TaskStatus, SubscriptionPlan } from "@/types";
 import { FolderKanban, Plus, ChevronRight, Users } from "lucide-react";
 
 export default function ProjectsPage() {
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const projectTasks = (projectId: string) => mockTasks.filter(t => t.projectId === projectId);
-  
-  const maxProjects = PLAN_LIMITS[SubscriptionPlan.FREE].maxProjects;
-  const isLimitReached = mockProjects.length >= maxProjects;
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+      return;
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    const organizationId = "org_1";
+    projectsApi
+      .list(organizationId)
+      .then((data) => setProjects(data.projects))
+      .catch(() => setProjects([]))
+      .finally(() => setIsLoading(false));
+  }, [user]);
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjectName.trim()) return;
+    setIsCreating(true);
+    try {
+      await projectsApi.create({ name: newProjectName, organizationId: "org_1" });
+      const data = await projectsApi.list("org_1");
+      setProjects(data.projects);
+      setIsModalOpen(false);
+      setNewProjectName("");
+    } catch (err: any) {
+      // Handle limit error
+      if (err.message.includes("Limite")) {
+        alert(err.message);
+      }
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  if (authLoading || isLoading) {
+    return (
+      <AppLayout breadcrumb="Projets" title="Chargement...">
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <AppLayout breadcrumb="Projets" title="Tous les projets" activeRoute="projects">
@@ -25,7 +79,7 @@ export default function ProjectsPage() {
           <div className="flex items-center gap-2">
             <FolderKanban className="h-5 w-5 text-blue" />
             <span className="text-[14px] text-ink-soft">
-              {mockProjects.length} projet{mockProjects.length > 1 ? "s" : ""}
+              {projects.length} projet{projects.length > 1 ? "s" : ""}
             </span>
           </div>
           <Button onClick={() => setIsModalOpen(true)}>
@@ -35,7 +89,7 @@ export default function ProjectsPage() {
         </div>
 
         {/* Projects list */}
-        {mockProjects.length === 0 ? (
+        {projects.length === 0 ? (
           <EmptyState
             title="Aucun projet"
             description="Créez votre premier projet pour commencer à organiser vos tâches."
@@ -48,119 +102,68 @@ export default function ProjectsPage() {
           />
         ) : (
           <div className="flex flex-col gap-2">
-            {mockProjects.map((project) => {
-              const tasks = projectTasks(project._id);
-              const completed = tasks.filter(t => t.status === TaskStatus.TERMINE).length;
-              const inProgress = tasks.filter(t => t.status === TaskStatus.EN_COURS).length;
-              const todo = tasks.filter(t => t.status === TaskStatus.A_FAIRE).length;
-              const total = tasks.length;
-
-              return (
-                <div
-                  key={project._id}
-                  className="flex items-center gap-4 rounded-xl border border-line bg-white px-5 py-4 transition-colors hover:bg-blue-veil/30"
-                >
-                  <div className="flex-1 flex flex-col gap-1">
-                    <span className="text-[14.5px] font-semibold text-ink">
-                      {project.name}
-                    </span>
-                    <div className="flex items-center gap-3 text-[12.5px] text-ink-soft">
-                      <span>{total} tâche{total > 1 ? "s" : ""}</span>
-                      <span className="text-line">·</span>
-                      <span>Mis à jour récemment</span>
-                    </div>
+            {projects.map((project) => (
+              <motion.div
+                key={project._id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-4 rounded-xl border border-line bg-white px-5 py-4 transition-colors hover:bg-blue-veil/30 cursor-pointer"
+                onClick={() => router.push(`/projects/${project._id}`)}
+              >
+                <div className="flex-1 flex flex-col gap-1">
+                  <span className="text-[14.5px] font-semibold text-ink">
+                    {project.name}
+                  </span>
+                  <div className="flex items-center gap-3 text-[12.5px] text-ink-soft">
+                    <span>Créé le {new Date(project.createdAt).toLocaleDateString("fr-FR")}</span>
                   </div>
-
-                  {/* Progress bar */}
-                  <div className="w-48 flex flex-col gap-1.5">
-                    <div className="flex h-2 w-full overflow-hidden rounded-full bg-line">
-                      {total > 0 && (
-                        <>
-                          <div className="bg-blue-deep" style={{ width: `${(completed / total) * 100}%` }} />
-                          <div className="bg-blue" style={{ width: `${(inProgress / total) * 100}%` }} />
-                          <div className="bg-blue-veil" style={{ width: `${(todo / total) * 100}%` }} />
-                        </>
-                      )}
-                    </div>
-                    <div className="flex gap-3 text-[11px] text-ink-soft">
-                      <span>{completed} term.</span>
-                      <span>{inProgress} en cours</span>
-                      <span>{todo} à faire</span>
-                    </div>
-                  </div>
-
-                  {/* Members */}
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-ink-soft" />
-                    <span className="text-[12.5px] text-ink-soft">
-                      {mockUsers.length}
-                    </span>
-                  </div>
-
-                  <ChevronRight className="h-4 w-4 text-ink-soft" />
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Limit banner */}
-        {isLimitReached && (
-          <div className="rounded-xl border border-blue-edge bg-blue-veil p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <span className="text-[14px] font-semibold text-ink">
-                  Limite atteinte
-                </span>
-                <span className="text-[13px] text-ink-soft">
-                  Vous avez atteint la limite de {maxProjects} projet{maxProjects > 1 ? "s" : ""} du plan gratuit.
-                </span>
-              </div>
-              <Button variant="secondary">
-                Passer au Pro
-              </Button>
-            </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-ink-soft" />
+                  <span className="text-[12.5px] text-ink-soft">
+                    {/* Mock member count */}
+                    3
+                  </span>
+                </div>
+
+                <ChevronRight className="h-4 w-4 text-ink-soft" />
+              </motion.div>
+            ))}
           </div>
         )}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <div className="flex flex-col gap-4">
-          <h3 className="text-[18px] font-semibold text-ink">
-            {isLimitReached ? "Limite atteinte" : "Nouveau projet"}
-          </h3>
-          {isLimitReached ? (
-            <>
-              <p className="text-[14px] text-ink-soft">
-                Passez au plan Pro pour créer des projets illimités.
-              </p>
-              <div className="flex justify-end gap-3">
-                <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-                  Plus tard
-                </Button>
-                <Button>Voir le plan Pro</Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="text-[14px] text-ink-soft">
-                Donnez un nom à votre projet.
-              </p>
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(10,27,77,0.42)]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg"
+          >
+            <h3 className="text-[18px] font-semibold text-ink">Nouveau projet</h3>
+            <form onSubmit={handleCreateProject} className="mt-4 flex flex-col gap-4">
               <input
                 type="text"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
                 placeholder="Nom du projet"
                 className="h-10 rounded-lg border border-blue-edge bg-white px-3 text-[14px]"
+                required
               />
               <div className="flex justify-end gap-3">
-                <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
+                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
                   Annuler
                 </Button>
-                <Button>Créer</Button>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? "Création..." : "Créer"}
+                </Button>
               </div>
-            </>
-          )}
+            </form>
+          </motion.div>
         </div>
-      </Modal>
+      )}
     </AppLayout>
   );
 }

@@ -48,7 +48,7 @@ export function Sidebar({ activeRoute = "today" }: SidebarProps) {
             Organisation
           </span>
           <NavItem label="Abonnement" active={activeRoute === "billing"} />
-          <NavItem label="Paramètres" active={false} />
+          <NavItem label="Profil" active={activeRoute === "profile"} />
         </div>
       </nav>
 

@@ -1,36 +1,75 @@
+// apps/web/src/app/(app)/today/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { TaskRow } from "@/components/ui/TaskRow";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { mockTasks, mockProjects, mockUsers, mockCurrentUser } from "@/lib/mock-data";
+import { tasksApi } from "@/lib/api";
 import { Task, TaskStatus } from "@/types";
 import { Check, Clock, Calendar } from "lucide-react";
 
 export default function TodayPage() {
-  const [tasks, setTasks] = useState<Task[]>(
-    mockTasks.filter((t) => t.assignedTo === mockCurrentUser._id)
-  );
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const handleStatusChange = (taskId: string, status: TaskStatus) => {
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+      return;
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // TODO: Récupérer l'organizationId depuis le contexte ou les params
+    const organizationId = "org_1";
+
+    tasksApi
+      .myTasks(organizationId)
+      .then((data) => setTasks(data.tasks as Task[]))
+      .catch((err) => setError(err.message))
+      .finally(() => setIsLoading(false));
+  }, [user]);
+
+  const handleStatusChange = async (taskId: string, status: TaskStatus) => {
+    // TODO: Mettre à jour via l'API
     setTasks((prev) =>
       prev.map((t) => (t._id === taskId ? { ...t, status } : t))
     );
   };
 
+  if (authLoading || isLoading) {
+    return (
+      <AppLayout breadcrumb="Aujourd'hui" title="Chargement...">
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!user) return null;
+
   const todayTasks = tasks.filter((t) => t.status !== TaskStatus.TERMINE);
   const doneTasks = tasks.filter((t) => t.status === TaskStatus.TERMINE);
 
-  const getProject = (id: string) => mockProjects.find((p) => p._id === id);
-  const getAssignee = (id?: string) =>
-    mockUsers.find((u) => u._id === id);
-
   return (
-    <AppLayout breadcrumb="Aujourd'hui" title="Bonjour Aminata" activeRoute="today">
+    <AppLayout breadcrumb="Aujourd'hui" title={`Bonjour ${user.name}`} activeRoute="today">
       <div className="flex flex-col gap-6">
         {/* Bandeau */}
-        <div className="rounded-2xl bg-blue-deep p-6 text-white">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl bg-blue-deep p-6 text-white"
+        >
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[18px] font-semibold">
@@ -44,7 +83,6 @@ export default function TodayPage() {
                   : "Cochez vos tâches au fil de la journée"}
               </p>
             </div>
-            {/* Frise de charge */}
             <div className="flex items-end gap-1">
               {tasks.map((t) => (
                 <div
@@ -60,7 +98,7 @@ export default function TodayPage() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Tâches */}
         {tasks.length === 0 ? (
@@ -70,7 +108,6 @@ export default function TodayPage() {
           />
         ) : (
           <div className="flex flex-col gap-4">
-            {/* En retard */}
             {todayTasks.filter(
               (t) => t.dueDate && new Date(t.dueDate) < new Date()
             ).length > 0 && (
@@ -79,42 +116,32 @@ export default function TodayPage() {
                   En retard
                 </span>
                 {todayTasks
-                  .filter(
-                    (t) => t.dueDate && new Date(t.dueDate) < new Date()
-                  )
+                  .filter((t) => t.dueDate && new Date(t.dueDate) < new Date())
                   .map((t) => (
                     <TaskRow
                       key={t._id}
                       task={t}
-                      project={getProject(t.projectId)}
-                      assignee={getAssignee(t.assignedTo)}
                       onStatusChange={handleStatusChange}
                     />
                   ))}
               </div>
             )}
 
-            {/* À faire aujourd'hui */}
             <div className="flex flex-col gap-2">
               <span className="text-[12.5px] font-semibold uppercase tracking-wide text-ink-soft">
                 À faire
               </span>
               {todayTasks
-                .filter(
-                  (t) => !t.dueDate || new Date(t.dueDate) >= new Date()
-                )
+                .filter((t) => !t.dueDate || new Date(t.dueDate) >= new Date())
                 .map((t) => (
                   <TaskRow
                     key={t._id}
                     task={t}
-                    project={getProject(t.projectId)}
-                    assignee={getAssignee(t.assignedTo)}
                     onStatusChange={handleStatusChange}
                   />
                 ))}
             </div>
 
-            {/* Terminées */}
             {doneTasks.length > 0 && (
               <div className="flex flex-col gap-2">
                 <span className="text-[12.5px] font-semibold uppercase tracking-wide text-ink-soft">
@@ -124,8 +151,6 @@ export default function TodayPage() {
                   <TaskRow
                     key={t._id}
                     task={t}
-                    project={getProject(t.projectId)}
-                    assignee={getAssignee(t.assignedTo)}
                     onStatusChange={handleStatusChange}
                   />
                 ))}
