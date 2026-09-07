@@ -1,3 +1,7 @@
+// apps/web/src/components/layout/Sidebar.tsx
+"use client";
+
+import { useRouter, usePathname } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Gauge } from "@/components/ui/Gauge";
@@ -7,6 +11,18 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeRoute = "today" }: SidebarProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const isActive = (route: string) => {
+    if (route === "today") return pathname === "/today";
+    if (route === "projects") return pathname === "/projects";
+    if (route === "team") return pathname === "/team";
+    if (route === "billing") return pathname === "/billing";
+    if (route === "profile") return pathname === "/profile";
+    return false;
+  };
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-[248px] flex flex-col border-r border-line bg-white">
       {/* Organisation selector */}
@@ -29,26 +45,27 @@ export function Sidebar({ activeRoute = "today" }: SidebarProps) {
         <NavItem
           label="Aujourd'hui"
           count={3}
-          active={activeRoute === "today"}
+          active={isActive("today")}
+          href="/today"
         />
-        <NavItem label="Projets" count={3} active={activeRoute === "projects"} />
-        <NavItem label="Équipe" count={3} active={activeRoute === "team"} />
+        <NavItem label="Projets" count={3} active={isActive("projects")} href="/projects" />
+        <NavItem label="Équipe" count={3} active={isActive("team")} href="/team" />
 
         <div className="mt-4 flex flex-col gap-1">
           <span className="px-3 py-1 text-[12.5px] font-semibold uppercase tracking-wide text-ink-soft">
             Projets
           </span>
-          <NavItem label="Lancement appli mobile" active={false} />
-          <NavItem label="Refonte site vitrine" active={false} />
-          <NavItem label="Campagne fidélité" active={false} />
+          <NavItem label="Lancement appli mobile" active={false} href="#" />
+          <NavItem label="Refonte site vitrine" active={false} href="#" />
+          <NavItem label="Campagne fidélité" active={false} href="#" />
         </div>
 
         <div className="mt-4 flex flex-col gap-1">
           <span className="px-3 py-1 text-[12.5px] font-semibold uppercase tracking-wide text-ink-soft">
             Organisation
           </span>
-          <NavItem label="Abonnement" active={activeRoute === "billing"} />
-          <NavItem label="Profil" active={activeRoute === "profile"} />
+          <NavItem label="Abonnement" active={isActive("billing")} href="/billing" />
+          <NavItem label="Profil" active={isActive("profile")} href="/profile" />
         </div>
       </nav>
 
@@ -66,7 +83,10 @@ export function Sidebar({ activeRoute = "today" }: SidebarProps) {
           </div>
           <Gauge value={3} max={3} color="blue-deep" />
         </div>
-        <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-deep px-3 py-2 text-[13px] font-semibold text-white hover:bg-ink">
+        <button
+          onClick={() => router.push("/billing")}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-deep px-3 py-2 text-[13px] font-semibold text-white hover:bg-ink"
+        >
           Passer au Pro
         </button>
       </div>
@@ -78,13 +98,18 @@ function NavItem({
   label,
   count,
   active,
+  href,
 }: {
   label: string;
   count?: number;
   active: boolean;
+  href: string;
 }) {
+  const router = useRouter();
+
   return (
     <button
+      onClick={() => href !== "#" && router.push(href)}
       className={`flex h-9 w-full items-center gap-2 rounded-lg px-3 text-[14px] transition-colors ${
         active ? "bg-blue-veil font-medium text-blue" : "text-ink hover:bg-blue-veil"
       }`}
