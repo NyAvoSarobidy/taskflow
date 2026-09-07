@@ -1,9 +1,12 @@
+// apps/api/src/middlewares/tenantIsolation.ts
 import { Request, Response, NextFunction } from "express";
 import Membership from "../models/Membership";
+import Project from "../models/Project";
 
 /**
  * Vérifie que l'utilisateur authentifié appartient à l'organizationId demandé.
- * L'organizationId peut venir du body, des params, ou des query params.
+ * L'organizationId peut venir du body, des params, des query params,
+ * ou être résolu depuis le projet (via projectId).
  * Attache req.tenant = { organizationId, role } si OK.
  */
 export async function tenantIsolation(
@@ -13,10 +16,18 @@ export async function tenantIsolation(
 ) {
   try {
     // Récupérer l'organizationId depuis body, params ou query
-    const organizationId =
+    let organizationId =
       req.body?.organizationId ||
       req.params?.organizationId ||
       req.query?.organizationId;
+
+    // Si pas d'organizationId, essayer de le résoudre depuis le projet
+    if (!organizationId && req.params?.projectId) {
+      const project = await Project.findById(req.params.projectId).select("organizationId");
+      if (project) {
+        organizationId = project.organizationId.toString();
+      }
+    }
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId requis" });
