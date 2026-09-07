@@ -56,7 +56,7 @@ export async function createInvitation(data: {
       organizationId: data.organizationId,
     });
     if (existingMembership) {
-      throw new InvitationError("Cet utilisateur est déjà membre", 409);
+      throw new InvitationError("Cet utilisateur est déjà membre de cette organisation", 409);
     }
   }
 
@@ -68,7 +68,7 @@ export async function createInvitation(data: {
   });
 
   if (existingInvitation) {
-    throw new InvitationError("Une invitation a déjà été envoyée à cet email", 409);
+    throw new InvitationError("Une invitation a déjà été envoyée à cet email. Attendez qu'elle expire ou révoquez-la.", 409);
   }
 
   // Créer le token

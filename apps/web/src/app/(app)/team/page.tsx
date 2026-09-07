@@ -8,16 +8,25 @@ import { useAuth } from "@/context/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { MemberRow } from "@/components/ui/MemberRow";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { User, UserRole } from "@/types";
 import { invitationsApi } from "@/lib/api";
-import { UserPlus, Mail, ShieldCheck } from "lucide-react";
+import { UserPlus, Mail, ShieldCheck, X, RefreshCw, Clock, CheckCircle, XCircle } from "lucide-react";
 import { mockUsers, mockCurrentUser, mockSubscription, PLAN_LIMITS, SubscriptionPlan } from "@/lib/mock-data";
+
+interface Invitation {
+  _id: string;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+}
 
 export default function TeamPage() {
   const router = useRouter();
   const { user, organizationId, isLoading: authLoading } = useAuth();
   const [members, setMembers] = useState<User[]>(mockUsers);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<UserRole>(UserRole.MEMBRE);
@@ -28,6 +37,15 @@ export default function TeamPage() {
   const maxMembers = PLAN_LIMITS[SubscriptionPlan.FREE].maxMembers;
   const isLimitReached = members.length >= maxMembers;
 
+  useEffect(() => {
+    if (!user || !organizationId) return;
+    
+    // Charger les invitations
+    invitationsApi.list(organizationId)
+      .then((data) => setInvitations(data.invitations || []))
+      .catch(() => setInvitations([]));
+  }, [user, organizationId]);
+
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail.trim() || !organizationId) return;
@@ -36,7 +54,7 @@ export default function TeamPage() {
     setInviteSuccess("");
 
     try {
-      await invitationsApi.create({
+      const response = await invitationsApi.create({
         email: inviteEmail,
         role: inviteRole,
         organizationId,
@@ -44,10 +62,40 @@ export default function TeamPage() {
       setInviteSuccess(`Invitation envoyée à ${inviteEmail}`);
       setInviteEmail("");
       setIsInviteOpen(false);
+      // Recharger les invitations
+      const data = await invitationsApi.list(organizationId);
+      setInvitations(data.invitations || []);
     } catch (err: any) {
       setInviteError(err.message || "Erreur lors de l'envoi");
     } finally {
       setIsInviting(false);
+    }
+  };
+
+  const handleRevoke = async (invitationId: string) => {
+    try {
+      await invitationsApi.revoke(invitationId);
+      // Recharger les invitations
+      if (organizationId) {
+        const data = await invitationsApi.list(organizationId);
+        setInvitations(data.invitations || []);
+      }
+    } catch (err: any) {
+      alert(err.message || "Erreur lors de la révocation");
+    }
+  };
+
+  const handleResend = async (invitationId: string) => {
+    try {
+      await invitationsApi.resend(invitationId);
+      // Recharger les invitations
+      if (organizationId) {
+        const data = await invitationsApi.list(organizationId);
+        setInvitations(data.invitations || []);
+      }
+      setInviteSuccess("Invitation renvoyée !");
+    } catch (err: any) {
+      alert(err.message || "Erreur lors du renvoi");
     }
   };
 
@@ -66,14 +114,23 @@ export default function TeamPage() {
     return null;
   }
 
+  const pendingInvitations = invitations.filter(i => i.status === "pending");
+
   return (
     <AppLayout breadcrumb="Équipe" title="Membres de l'organisation" activeRoute="team">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <span className="text-[14px] text-ink-soft">
-            {members.length} membre{members.length > 1 ? "s" : ""}
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-[14px] text-ink-soft">
+              {members.length} membre{members.length > 1 ? "s" : ""}
+            </span>
+            {pendingInvitations.length > 0 && (
+              <span className="rounded-full bg-blue-veil px-2 py-0.5 text-[12px] font-medium text-blue">
+                {pendingInvitations.length} invitation{pendingInvitations.length > 1 ? "s" : ""} en attente
+              </span>
+            )}
+          </div>
           <Button onClick={() => setIsInviteOpen(true)}>
             <UserPlus className="h-4 w-4" />
             Inviter un membre
@@ -90,6 +147,44 @@ export default function TeamPage() {
             />
           ))}
         </div>
+
+        {/* Pending invitations */}
+        {pendingInvitations.length > 0 && (
+          <div className="rounded-xl border border-blue-edge bg-blue-veil/30">
+            <div className="border-b border-blue-edge px-4 py-3">
+              <span className="text-[14px] font-semibold text-ink">Invitations en attente</span>
+            </div>
+            {pendingInvitations.map((invitation) => (
+              <div key={invitation._id} className="flex items-center gap-4 border-b border-blue-edge/50 px-4 py-3 last:border-b-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-veil">
+                  <Mail className="h-4 w-4 text-blue" />
+                </div>
+                <div className="flex-1 flex flex-col">
+                  <span className="text-[14px] font-medium text-ink">{invitation.email}</span>
+                  <span className="text-[12.5px] text-ink-soft">
+                    {invitation.role === "admin" ? "Administrateur" : "Membre"} · Expire le {new Date(invitation.expiresAt).toLocaleDateString("fr-FR")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleResend(invitation._id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft hover:bg-blue-veil"
+                    title="Renvoyer"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleRevoke(invitation._id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft hover:bg-blue-veil"
+                    title="Révoquer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Limit banner */}
         {isLimitReached && (
