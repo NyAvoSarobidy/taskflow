@@ -1,17 +1,68 @@
+// apps/web/src/app/(app)/billing/page.tsx
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { Gauge } from "@/components/ui/Gauge";
 import { Badge } from "@/components/ui/Badge";
-import { mockProjects, mockUsers, mockSubscription, PLAN_LIMITS, SubscriptionPlan } from "@/lib/mock-data";
+import { billingApi } from "@/lib/api";
+import { mockProjects, mockUsers, PLAN_LIMITS, SubscriptionPlan } from "@/lib/mock-data";
 import { Check, Sparkles } from "lucide-react";
 
 export default function BillingPage() {
+  const router = useRouter();
+  const { user, organizationId, isLoading: authLoading } = useAuth();
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isPortalLoading, setIsPortalLoading] = useState(false);
+
   const projectCount = mockProjects.length;
   const memberCount = mockUsers.length;
-  const maxProjects = PLAN_LIMITS[mockSubscription.plan].maxProjects;
-  const maxMembers = PLAN_LIMITS[mockSubscription.plan].maxMembers;
+  const maxProjects = PLAN_LIMITS[SubscriptionPlan.FREE].maxProjects;
+  const maxMembers = PLAN_LIMITS[SubscriptionPlan.FREE].maxMembers;
+
+  const handleUpgrade = async () => {
+    if (!organizationId) return;
+    setIsUpgrading(true);
+    try {
+      const { url } = await billingApi.checkout({ plan: "pro", organizationId });
+      window.location.href = url;
+    } catch (err: any) {
+      alert(err.message || "Erreur lors de la création de la session");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  const handlePortal = async () => {
+    if (!organizationId) return;
+    setIsPortalLoading(true);
+    try {
+      const { url } = await billingApi.portal({ organizationId });
+      window.location.href = url;
+    } catch (err: any) {
+      alert(err.message || "Erreur lors de l'ouverture du portail");
+    } finally {
+      setIsPortalLoading(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <AppLayout breadcrumb="Abonnement" title="Chargement...">
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
 
   return (
     <AppLayout breadcrumb="Abonnement" title="Votre abonnement" activeRoute="billing">
@@ -21,7 +72,6 @@ export default function BillingPage() {
           <h2 className="text-[18px] font-semibold text-ink">Votre consommation</h2>
           
           <div className="grid grid-cols-2 gap-4">
-            {/* Projects */}
             <div className="rounded-xl border border-line bg-white p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[14px] font-medium text-ink">Projets</span>
@@ -41,7 +91,6 @@ export default function BillingPage() {
               </p>
             </div>
 
-            {/* Members */}
             <div className="rounded-xl border border-line bg-white p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[14px] font-medium text-ink">Membres</span>
@@ -130,8 +179,8 @@ export default function BillingPage() {
                     Support prioritaire
                   </li>
                 </ul>
-                <Button>
-                  Passer au Pro
+                <Button onClick={handleUpgrade} disabled={isUpgrading}>
+                  {isUpgrading ? "Chargement..." : "Passer au Pro"}
                 </Button>
                 <p className="text-[12px] text-ink-soft text-center">
                   Paiement sécurisé par Stripe · Annulation possible à tout moment
