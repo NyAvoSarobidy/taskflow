@@ -1,6 +1,22 @@
 // apps/api/src/controllers/taskController.ts
 import { Request, Response, NextFunction } from "express";
 import * as taskService from "../services/taskService";
+import Project from "../models/Project";
+
+// Helper pour récupérer organizationId depuis le projet si non fourni
+async function resolveOrganizationId(req: Request, projectId?: string): Promise<string | null> {
+  // D'abord vérifier les query params / body
+  const orgId = (req.query.organizationId as string) || req.tenant?.organizationId;
+  if (orgId) return orgId;
+
+  // Sinon, récupérer depuis le projet
+  if (projectId) {
+    const project = await Project.findById(projectId).select("organizationId");
+    if (project) return project.organizationId.toString();
+  }
+
+  return null;
+}
 
 export async function createTask(
   req: Request,
@@ -10,7 +26,7 @@ export async function createTask(
   try {
     const projectId = req.params.projectId as string;
     const { title, description, assignedTo, dueDate } = req.body;
-    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
+    const organizationId = await resolveOrganizationId(req, projectId);
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -37,7 +53,7 @@ export async function listTasks(
 ) {
   try {
     const projectId = req.params.projectId as string;
-    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
+    const organizationId = await resolveOrganizationId(req, projectId);
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -63,7 +79,7 @@ export async function getTask(
   try {
     const projectId = req.params.projectId as string;
     const taskId = req.params.taskId as string;
-    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
+    const organizationId = await resolveOrganizationId(req, projectId);
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -90,7 +106,7 @@ export async function updateTask(
     const projectId = req.params.projectId as string;
     const taskId = req.params.taskId as string;
     const { title, description, assignedTo, status, dueDate } = req.body;
-    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
+    const organizationId = await resolveOrganizationId(req, projectId);
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -127,7 +143,7 @@ export async function deleteTask(
   try {
     const projectId = req.params.projectId as string;
     const taskId = req.params.taskId as string;
-    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
+    const organizationId = await resolveOrganizationId(req, projectId);
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });

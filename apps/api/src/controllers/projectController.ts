@@ -1,6 +1,20 @@
 // apps/api/src/controllers/projectController.ts
 import { Request, Response, NextFunction } from "express";
 import * as projectService from "../services/projectService";
+import Project from "../models/Project";
+
+// Helper pour récupérer organizationId depuis le projet si non fourni
+async function resolveOrganizationId(req: Request, projectId?: string): Promise<string | null> {
+  const orgId = (req.query.organizationId as string) || req.tenant?.organizationId;
+  if (orgId) return orgId;
+
+  if (projectId) {
+    const project = await Project.findById(projectId).select("organizationId");
+    if (project) return project.organizationId.toString();
+  }
+
+  return null;
+}
 
 export async function createProject(
   req: Request,
@@ -48,7 +62,7 @@ export async function getProject(
 ) {
   try {
     const projectId = req.params.projectId as string;
-    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
+    const organizationId = await resolveOrganizationId(req, projectId);
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -74,7 +88,7 @@ export async function updateProject(
   try {
     const projectId = req.params.projectId as string;
     const { name } = req.body;
-    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
+    const organizationId = await resolveOrganizationId(req, projectId);
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -103,7 +117,7 @@ export async function deleteProject(
 ) {
   try {
     const projectId = req.params.projectId as string;
-    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
+    const organizationId = await resolveOrganizationId(req, projectId);
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
