@@ -203,3 +203,24 @@ export const billingApi = {
       body: data,
     }),
 };
+
+// Invitations API
+export const invitationsApi = {
+  create: (data: { email: string; role: string; organizationId: string }) =>
+    apiFetch<any>("/api/invitations", {
+      method: "POST",
+      body: data,
+    }),
+
+  list: (organizationId: string) =>
+    apiFetch<any>(`/api/invitations?organizationId=${organizationId}`),
+
+  accept: (token: string) =>
+    apiFetch<any>(`/api/invitations/accept?token=${token}`),
+
+  revoke: (invitationId: string) =>
+    apiFetch<any>(`/api/invitations/${invitationId}/revoke`, { method: "POST" }),
+
+  resend: (invitationId: string) =>
+    apiFetch<any>(`/api/invitations/${invitationId}/resend`, { method: "POST" }),
+};

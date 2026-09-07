@@ -10,32 +10,45 @@ import { Button } from "@/components/ui/Button";
 import { MemberRow } from "@/components/ui/MemberRow";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { User, UserRole } from "@/types";
+import { invitationsApi } from "@/lib/api";
 import { UserPlus, Mail, ShieldCheck } from "lucide-react";
 import { mockUsers, mockCurrentUser, mockSubscription, PLAN_LIMITS, SubscriptionPlan } from "@/lib/mock-data";
 
 export default function TeamPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, organizationId, isLoading: authLoading } = useAuth();
   const [members, setMembers] = useState<User[]>(mockUsers);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<UserRole>(UserRole.MEMBRE);
   const [isInviting, setIsInviting] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const [inviteSuccess, setInviteSuccess] = useState("");
 
   const maxMembers = PLAN_LIMITS[SubscriptionPlan.FREE].maxMembers;
   const isLimitReached = members.length >= maxMembers;
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail.trim()) return;
+    if (!inviteEmail.trim() || !organizationId) return;
     setIsInviting(true);
-    // TODO: Appel API pour inviter un membre
-    // Pour l'instant, on simule
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    alert(`Invitation envoyée à ${inviteEmail} (simulation)`);
-    setIsInviteOpen(false);
-    setInviteEmail("");
-    setIsInviting(false);
+    setInviteError("");
+    setInviteSuccess("");
+
+    try {
+      await invitationsApi.create({
+        email: inviteEmail,
+        role: inviteRole,
+        organizationId,
+      });
+      setInviteSuccess(`Invitation envoyée à ${inviteEmail}`);
+      setInviteEmail("");
+      setIsInviteOpen(false);
+    } catch (err: any) {
+      setInviteError(err.message || "Erreur lors de l'envoi");
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   if (authLoading) {
@@ -162,6 +175,17 @@ export default function TeamPage() {
                   </button>
                 </div>
               </div>
+
+              {inviteError && (
+                <div className="rounded-lg bg-blue-veil p-3 text-[13px] text-ink">
+                  {inviteError}
+                </div>
+              )}
+              {inviteSuccess && (
+                <div className="rounded-lg bg-blue-veil p-3 text-[13px] text-blue">
+                  {inviteSuccess}
+                </div>
+              )}
 
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="ghost" onClick={() => setIsInviteOpen(false)}>
