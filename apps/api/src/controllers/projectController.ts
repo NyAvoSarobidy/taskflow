@@ -9,7 +9,7 @@ export async function createProject(
 ) {
   try {
     const { name } = req.body;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -28,7 +28,7 @@ export async function listProjects(
   next: NextFunction
 ) {
   try {
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -48,7 +48,7 @@ export async function getProject(
 ) {
   try {
     const projectId = req.params.projectId as string;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -74,7 +74,7 @@ export async function updateProject(
   try {
     const projectId = req.params.projectId as string;
     const { name } = req.body;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });
@@ -103,7 +103,7 @@ export async function deleteProject(
 ) {
   try {
     const projectId = req.params.projectId as string;
-    const organizationId = req.tenant?.organizationId;
+    const organizationId = (req.query.organizationId as string) || req.tenant?.organizationId;
 
     if (!organizationId) {
       return res.status(400).json({ message: "organizationId manquant" });

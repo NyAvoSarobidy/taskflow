@@ -1,4 +1,3 @@
-// apps/api/src/validations/authValidations.ts
 import { z } from "zod";
 
 // Pour Zod v4 : required via .min(1) + message d'erreur explicite

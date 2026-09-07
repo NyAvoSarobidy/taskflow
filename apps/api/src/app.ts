@@ -5,6 +5,9 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 
 import authRoutes from "./routes/authRoutes";
+import billingRoutes from "./routes/billingRoutes";
+import { handleWebhook } from "./controllers/billingController";
+import organizationRoutes from "./routes/organizationRoutes";
 import projectRoutes from "./routes/projectRoutes";
 import taskRoutes from "./routes/taskRoutes";
 import { setupSwagger } from "./config/swagger";
@@ -21,6 +24,14 @@ app.use(
     credentials: true,
   })
 );
+// Webhook Stripe (doit être AVANT express.json() pour avoir le body brut)
+app.post(
+  "/api/billing/webhook",
+  express.raw({ type: "application/json" }),
+  handleWebhook
+);
+
+// Middleware JSON pour les autres routes
 app.use(express.json());
 app.use(cookieParser());
 
@@ -31,6 +42,8 @@ app.get("/api/health", (_req, res) => {
 
 //Routes métier
 app.use("/api/auth", authRoutes);
+app.use("/api/billing", billingRoutes);
+app.use("/api/organizations", organizationRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);
 

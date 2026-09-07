@@ -1,4 +1,4 @@
-// apps/api/src/routes/projectRoutes.ts
+
 import { Router } from "express";
 import { auth } from "../middlewares/auth";
 import { tenantIsolation } from "../middlewares/tenantIsolation";
