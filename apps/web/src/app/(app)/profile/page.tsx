@@ -7,8 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
-import { mockCurrentUser } from "@/lib/mock-data";
-import { Mail, Calendar, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();

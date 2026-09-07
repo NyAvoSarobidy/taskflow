@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Gauge } from "@/components/ui/Gauge";
 import { projectsApi, tasksApi } from "@/lib/api";
-import { TaskStatus, SubscriptionPlan } from "@/types";
+import { TaskStatus } from "@/types";
 import { FolderKanban, Plus, ChevronRight, Users } from "lucide-react";
 
 export default function ProjectsPage() {
@@ -33,7 +33,7 @@ export default function ProjectsPage() {
     if (!user || !organizationId) return;
     projectsApi
       .list(organizationId)
-      .then((data) => setProjects(data.projects))
+      .then((data) => setProjects(data.projects || []))
       .catch(() => setProjects([]))
       .finally(() => setIsLoading(false));
   }, [user, organizationId]);
@@ -45,7 +45,7 @@ export default function ProjectsPage() {
     try {
       await projectsApi.create({ name: newProjectName, organizationId });
       const data = await projectsApi.list(organizationId);
-      setProjects(data.projects);
+      setProjects(data.projects || []);
       setIsModalOpen(false);
       setNewProjectName("");
     } catch (err: any) {
@@ -67,7 +67,7 @@ export default function ProjectsPage() {
 
   if (!user) return null;
 
-  const maxProjects = 1; // Plan free
+  const maxProjects = 1;
   const isLimitReached = projects.length >= maxProjects;
 
   return (
@@ -108,19 +108,11 @@ export default function ProjectsPage() {
                 onClick={() => router.push(`/projects/${project._id}`)}
               >
                 <div className="flex-1 flex flex-col gap-1">
-                  <span className="text-[14.5px] font-semibold text-ink">
-                    {project.name}
-                  </span>
+                  <span className="text-[14.5px] font-semibold text-ink">{project.name}</span>
                   <div className="flex items-center gap-3 text-[12.5px] text-ink-soft">
                     <span>Créé le {new Date(project.createdAt).toLocaleDateString("fr-FR")}</span>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-ink-soft" />
-                  <span className="text-[12.5px] text-ink-soft">3</span>
-                </div>
-
                 <ChevronRight className="h-4 w-4 text-ink-soft" />
               </motion.div>
             ))}
@@ -131,16 +123,12 @@ export default function ProjectsPage() {
           <div className="rounded-xl border border-blue-edge bg-blue-veil p-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <span className="text-[14px] font-semibold text-ink">
-                  Limite atteinte
-                </span>
+                <span className="text-[14px] font-semibold text-ink">Limite atteinte</span>
                 <span className="text-[13px] text-ink-soft">
                   Vous avez atteint la limite de {maxProjects} projet{maxProjects > 1 ? "s" : ""} du plan gratuit.
                 </span>
               </div>
-              <Button variant="secondary">
-                Passer au Pro
-              </Button>
+              <Button variant="secondary">Passer au Pro</Button>
             </div>
           </div>
         )}
@@ -164,12 +152,8 @@ export default function ProjectsPage() {
                 required
               />
               <div className="flex justify-end gap-3">
-                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={isCreating}>
-                  {isCreating ? "Création..." : "Créer"}
-                </Button>
+                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Annuler</Button>
+                <Button type="submit" disabled={isCreating}>{isCreating ? "Création..." : "Créer"}</Button>
               </div>
             </form>
           </motion.div>

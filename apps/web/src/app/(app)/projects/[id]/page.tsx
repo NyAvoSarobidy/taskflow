@@ -57,7 +57,7 @@ export default function KanbanPage() {
     setIsCreating(true);
     try {
       await tasksApi.create(projectId, { title: newTaskTitle });
-      const data = await tasksApi.listByProject(projectId, organizationId!);
+      const data = await tasksApi.listByProject(projectId, organizationId);
       setTasks(data.tasks as Task[]);
       setIsModalOpen(false);
       setNewTaskTitle("");
@@ -110,17 +110,14 @@ export default function KanbanPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm">
-              <Filter className="h-4 w-4" />
-              Assigné
+              <Filter className="h-4 w-4" /> Assigné
             </Button>
             <Button variant="secondary" size="sm">
-              <SlidersHorizontal className="h-4 w-4" />
-              Échéance
+              <SlidersHorizontal className="h-4 w-4" /> Échéance
             </Button>
           </div>
           <Button size="sm" onClick={() => setIsModalOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Nouvelle tâche
+            <Plus className="h-4 w-4" /> Nouvelle tâche
           </Button>
         </div>
 
@@ -129,9 +126,7 @@ export default function KanbanPage() {
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full border border-blue-edge" />
               <span className="text-[14.5px] font-semibold text-ink">À faire</span>
-              <span className="rounded-full bg-line px-2 py-0.5 text-[11px] font-medium text-ink-soft">
-                {todoTasks.length}
-              </span>
+              <span className="rounded-full bg-line px-2 py-0.5 text-[11px] font-medium text-ink-soft">{todoTasks.length}</span>
             </div>
             <div className="flex flex-col gap-2">
               {todoTasks.map((task) => (
@@ -141,8 +136,7 @@ export default function KanbanPage() {
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-blue-edge bg-white/50 py-4 text-[13px] text-ink-soft hover:bg-blue-veil/30"
               >
-                <Plus className="h-4 w-4" />
-                Ajouter une tâche
+                <Plus className="h-4 w-4" /> Ajouter une tâche
               </button>
             </div>
           </div>
@@ -151,9 +145,7 @@ export default function KanbanPage() {
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-blue-veil" />
               <span className="text-[14.5px] font-semibold text-ink">En cours</span>
-              <span className="rounded-full bg-blue px-2 py-0.5 text-[11px] font-medium text-white">
-                {inProgressTasks.length}
-              </span>
+              <span className="rounded-full bg-blue px-2 py-0.5 text-[11px] font-medium text-white">{inProgressTasks.length}</span>
             </div>
             <div className="flex flex-col gap-2">
               {inProgressTasks.map((task) => (
@@ -166,9 +158,7 @@ export default function KanbanPage() {
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-blue" />
               <span className="text-[14.5px] font-semibold text-ink">Terminé</span>
-              <span className="rounded-full bg-blue-deep px-2 py-0.5 text-[11px] font-medium text-white">
-                {doneTasks.length}
-              </span>
+              <span className="rounded-full bg-blue-deep px-2 py-0.5 text-[11px] font-medium text-white">{doneTasks.length}</span>
             </div>
             <div className="flex flex-col gap-2">
               {doneTasks.map((task) => (
@@ -197,12 +187,8 @@ export default function KanbanPage() {
                 required
               />
               <div className="flex justify-end gap-3">
-                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-                  Annuler
-                </Button>
-                <Button type="submit" disabled={isCreating}>
-                  {isCreating ? "Création..." : "Créer"}
-                </Button>
+                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Annuler</Button>
+                <Button type="submit" disabled={isCreating}>{isCreating ? "Création..." : "Créer"}</Button>
               </div>
             </form>
           </motion.div>

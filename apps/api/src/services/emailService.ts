@@ -68,3 +68,47 @@ export async function sendOTPEmail(
     return { success: false, error: "Échec de l'envoi" };
   }
 }
+
+export async function sendInvitationEmail(
+  email: string,
+  inviterName: string,
+  organizationName: string,
+  acceptUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!resend) {
+    console.error("❌ RESEND_API_KEY non défini");
+    return { success: false, error: "Service email non configuré" };
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "TaskFlow <onboarding@resend.dev>",
+      to: [email],
+      subject: `${inviterName} vous a rejoint sur TaskFlow`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0F4C81;">TaskFlow</h2>
+          <p>Bonjour,</p>
+          <p><strong>${inviterName}</strong> vous a invité(e) à rejoindre l'organisation <strong>${organizationName}</strong> sur TaskFlow.</p>
+          <p style="margin: 24px 0;">
+            <a href="${acceptUrl}" style="background-color: #1B4DFF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Rejoindre l'organisation</a>
+          </p>
+          <p style="color: #666; font-size: 12px;">
+            Ce lien expire dans 7 jours. Si vous ne souhaitez pas rejoindre cette organisation, ignorez cet email.
+          </p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error(" Erreur Resend :", error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(` Email d'invitation envoyé à ${email} (id: ${data?.id})`);
+    return { success: true };
+  } catch (err) {
+    console.error(" Erreur envoi email :", err);
+    return { success: false, error: "Échec de l'envoi" };
+  }
+}

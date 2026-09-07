@@ -8,8 +8,8 @@ import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { Gauge } from "@/components/ui/Gauge";
 import { Badge } from "@/components/ui/Badge";
-import { billingApi } from "@/lib/api";
-import { mockProjects, mockUsers, PLAN_LIMITS, SubscriptionPlan } from "@/lib/mock-data";
+import { billingApi, projectsApi, membersApi } from "@/lib/api";
+import { PLAN_LIMITS, SubscriptionPlan } from "@/types";
 import { Check, Sparkles } from "lucide-react";
 
 export default function BillingPage() {
@@ -17,9 +17,21 @@ export default function BillingPage() {
   const { user, organizationId, isLoading: authLoading } = useAuth();
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isPortalLoading, setIsPortalLoading] = useState(false);
+  const [projectCount, setProjectCount] = useState(0);
+  const [memberCount, setMemberCount] = useState(0);
 
-  const projectCount = mockProjects.length;
-  const memberCount = mockUsers.length;
+  useEffect(() => {
+    if (!organizationId) return;
+
+    projectsApi.list(organizationId)
+      .then((data) => setProjectCount(data.projects?.length || 0))
+      .catch(() => setProjectCount(0));
+
+    membersApi.list(organizationId)
+      .then((data) => setMemberCount(data.members?.length || 0))
+      .catch(() => setMemberCount(0));
+  }, [organizationId]);
+
   const maxProjects = PLAN_LIMITS[SubscriptionPlan.FREE].maxProjects;
   const maxMembers = PLAN_LIMITS[SubscriptionPlan.FREE].maxMembers;
 
@@ -67,7 +79,6 @@ export default function BillingPage() {
   return (
     <AppLayout breadcrumb="Abonnement" title="Votre abonnement" activeRoute="billing">
       <div className="flex flex-col gap-8">
-        {/* Consumption */}
         <div className="flex flex-col gap-4">
           <h2 className="text-[18px] font-semibold text-ink">Votre consommation</h2>
           
@@ -112,12 +123,10 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* Plans */}
         <div className="flex flex-col gap-4">
           <h2 className="text-[18px] font-semibold text-ink">Nos offres</h2>
           
           <div className="grid grid-cols-2 gap-4">
-            {/* Free plan */}
             <div className="rounded-xl border border-line bg-white p-6">
               <div className="flex flex-col gap-4">
                 <div>
@@ -128,31 +137,22 @@ export default function BillingPage() {
                 </div>
                 <ul className="flex flex-col gap-2 text-[14px] text-ink-soft">
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-blue" />
-                    1 projet
+                    <Check className="h-4 w-4 text-blue" /> 1 projet
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-blue" />
-                    3 membres
+                    <Check className="h-4 w-4 text-blue" /> 3 membres
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-blue" />
-                    Tâches illimitées
+                    <Check className="h-4 w-4 text-blue" /> Tâches illimitées
                   </li>
                 </ul>
-                <Button variant="secondary" disabled>
-                  Votre plan actuel
-                </Button>
+                <Button variant="secondary" disabled>Votre plan actuel</Button>
               </div>
             </div>
 
-            {/* Pro plan */}
             <div className="rounded-xl border-[1.5px] border-blue-deep bg-white p-6 relative">
               <div className="absolute -top-3 right-4">
-                <Badge variant="blue">
-                  <Sparkles className="h-3 w-3" />
-                  Sans limites
-                </Badge>
+                <Badge variant="blue"><Sparkles className="h-3 w-3" /> Sans limites</Badge>
               </div>
               <div className="flex flex-col gap-4">
                 <div>
@@ -163,20 +163,16 @@ export default function BillingPage() {
                 </div>
                 <ul className="flex flex-col gap-2 text-[14px] text-ink-soft">
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-blue" />
-                    Projets illimités
+                    <Check className="h-4 w-4 text-blue" /> Projets illimités
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-blue" />
-                    Membres illimités
+                    <Check className="h-4 w-4 text-blue" /> Membres illimités
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-blue" />
-                    Tâches illimitées
+                    <Check className="h-4 w-4 text-blue" /> Tâches illimitées
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-blue" />
-                    Support prioritaire
+                    <Check className="h-4 w-4 text-blue" /> Support prioritaire
                   </li>
                 </ul>
                 <Button onClick={handleUpgrade} disabled={isUpgrading}>
