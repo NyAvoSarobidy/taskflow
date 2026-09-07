@@ -16,7 +16,7 @@ import { Plus, Filter, SlidersHorizontal } from "lucide-react";
 export default function KanbanPage() {
   const router = useRouter();
   const params = useParams();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, organizationId, isLoading: authLoading } = useAuth();
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,8 +34,7 @@ export default function KanbanPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!user || !projectId) return;
-    const organizationId = "org_1";
+    if (!user || !projectId || !organizationId) return;
 
     Promise.all([
       projectsApi.get(projectId, organizationId),
@@ -50,7 +49,7 @@ export default function KanbanPage() {
         setTasks([]);
       })
       .finally(() => setIsLoading(false));
-  }, [user, projectId]);
+  }, [user, projectId, organizationId]);
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +57,7 @@ export default function KanbanPage() {
     setIsCreating(true);
     try {
       await tasksApi.create(projectId, { title: newTaskTitle });
-      const data = await tasksApi.listByProject(projectId, "org_1");
+      const data = await tasksApi.listByProject(projectId, organizationId);
       setTasks(data.tasks as Task[]);
       setIsModalOpen(false);
       setNewTaskTitle("");
@@ -108,7 +107,6 @@ export default function KanbanPage() {
   return (
     <AppLayout breadcrumb={`Projets / ${project.name}`} title={project.name}>
       <div className="flex flex-col gap-6">
-        {/* Toolbar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm">
@@ -126,9 +124,7 @@ export default function KanbanPage() {
           </Button>
         </div>
 
-        {/* Kanban columns */}
         <div className="grid grid-cols-3 gap-4">
-          {/* À faire */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full border border-blue-edge" />
@@ -151,7 +147,6 @@ export default function KanbanPage() {
             </div>
           </div>
 
-          {/* En cours */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-blue-veil" />
@@ -167,7 +162,6 @@ export default function KanbanPage() {
             </div>
           </div>
 
-          {/* Terminé */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-blue" />
@@ -185,7 +179,6 @@ export default function KanbanPage() {
         </div>
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(10,27,77,0.42)]">
           <motion.div

@@ -10,11 +10,10 @@ import { TaskRow } from "@/components/ui/TaskRow";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { tasksApi } from "@/lib/api";
 import { Task, TaskStatus } from "@/types";
-import { Check, Clock, Calendar } from "lucide-react";
 
 export default function TodayPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, organizationId, isLoading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,23 +26,28 @@ export default function TodayPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!user) return;
-
-    // TODO: Récupérer l'organizationId depuis le contexte ou les params
-    const organizationId = "org_1";
+    if (!user || !organizationId) return;
 
     tasksApi
       .myTasks(organizationId)
       .then((data) => setTasks(data.tasks as Task[]))
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
-  }, [user]);
+  }, [user, organizationId]);
 
   const handleStatusChange = async (taskId: string, status: TaskStatus) => {
-    // TODO: Mettre à jour via l'API
-    setTasks((prev) =>
-      prev.map((t) => (t._id === taskId ? { ...t, status } : t))
-    );
+    // Trouver la tâche pour récupérer son projet
+    const task = tasks.find(t => t._id === taskId);
+    if (!task || !organizationId) return;
+    
+    try {
+      await tasksApi.update(task.projectId, taskId, { status });
+      setTasks((prev) =>
+        prev.map((t) => (t._id === taskId ? { ...t, status } : t))
+      );
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   if (authLoading || isLoading) {
@@ -64,7 +68,6 @@ export default function TodayPage() {
   return (
     <AppLayout breadcrumb="Aujourd'hui" title={`Bonjour ${user.name}`} activeRoute="today">
       <div className="flex flex-col gap-6">
-        {/* Bandeau */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -100,7 +103,6 @@ export default function TodayPage() {
           </div>
         </motion.div>
 
-        {/* Tâches */}
         {tasks.length === 0 ? (
           <EmptyState
             title="Aucune tâche assignée"

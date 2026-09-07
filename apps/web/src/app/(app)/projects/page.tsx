@@ -15,7 +15,7 @@ import { FolderKanban, Plus, ChevronRight, Users } from "lucide-react";
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, organizationId, isLoading: authLoading } = useAuth();
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,30 +30,26 @@ export default function ProjectsPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!user) return;
-    const organizationId = "org_1";
+    if (!user || !organizationId) return;
     projectsApi
       .list(organizationId)
       .then((data) => setProjects(data.projects))
       .catch(() => setProjects([]))
       .finally(() => setIsLoading(false));
-  }, [user]);
+  }, [user, organizationId]);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProjectName.trim()) return;
+    if (!newProjectName.trim() || !organizationId) return;
     setIsCreating(true);
     try {
-      await projectsApi.create({ name: newProjectName, organizationId: "org_1" });
-      const data = await projectsApi.list("org_1");
+      await projectsApi.create({ name: newProjectName, organizationId });
+      const data = await projectsApi.list(organizationId);
       setProjects(data.projects);
       setIsModalOpen(false);
       setNewProjectName("");
     } catch (err: any) {
-      // Handle limit error
-      if (err.message.includes("Limite")) {
-        alert(err.message);
-      }
+      alert(err.message);
     } finally {
       setIsCreating(false);
     }
@@ -71,10 +67,12 @@ export default function ProjectsPage() {
 
   if (!user) return null;
 
+  const maxProjects = 1; // Plan free
+  const isLimitReached = projects.length >= maxProjects;
+
   return (
     <AppLayout breadcrumb="Projets" title="Tous les projets" activeRoute="projects">
       <div className="flex flex-col gap-4">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FolderKanban className="h-5 w-5 text-blue" />
@@ -88,7 +86,6 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        {/* Projects list */}
         {projects.length === 0 ? (
           <EmptyState
             title="Aucun projet"
@@ -121,10 +118,7 @@ export default function ProjectsPage() {
 
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-ink-soft" />
-                  <span className="text-[12.5px] text-ink-soft">
-                    {/* Mock member count */}
-                    3
-                  </span>
+                  <span className="text-[12.5px] text-ink-soft">3</span>
                 </div>
 
                 <ChevronRight className="h-4 w-4 text-ink-soft" />
@@ -132,9 +126,26 @@ export default function ProjectsPage() {
             ))}
           </div>
         )}
+
+        {isLimitReached && (
+          <div className="rounded-xl border border-blue-edge bg-blue-veil p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <span className="text-[14px] font-semibold text-ink">
+                  Limite atteinte
+                </span>
+                <span className="text-[13px] text-ink-soft">
+                  Vous avez atteint la limite de {maxProjects} projet{maxProjects > 1 ? "s" : ""} du plan gratuit.
+                </span>
+              </div>
+              <Button variant="secondary">
+                Passer au Pro
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(10,27,77,0.42)]">
           <motion.div

@@ -3,19 +3,18 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { Gauge } from "@/components/ui/Gauge";
 import { Badge } from "@/components/ui/Badge";
 import { billingApi } from "@/lib/api";
-import { mockProjects, mockUsers, mockSubscription, PLAN_LIMITS, SubscriptionPlan } from "@/lib/mock-data";
+import { mockProjects, mockUsers, PLAN_LIMITS, SubscriptionPlan } from "@/lib/mock-data";
 import { Check, Sparkles } from "lucide-react";
 
 export default function BillingPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, organizationId, isLoading: authLoading } = useAuth();
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isPortalLoading, setIsPortalLoading] = useState(false);
 
@@ -25,12 +24,10 @@ export default function BillingPage() {
   const maxMembers = PLAN_LIMITS[SubscriptionPlan.FREE].maxMembers;
 
   const handleUpgrade = async () => {
+    if (!organizationId) return;
     setIsUpgrading(true);
     try {
-      const { url } = await billingApi.checkout({
-        plan: "pro",
-        organizationId: "org_1",
-      });
+      const { url } = await billingApi.checkout({ plan: "pro", organizationId });
       window.location.href = url;
     } catch (err: any) {
       alert(err.message || "Erreur lors de la création de la session");
@@ -40,9 +37,10 @@ export default function BillingPage() {
   };
 
   const handlePortal = async () => {
+    if (!organizationId) return;
     setIsPortalLoading(true);
     try {
-      const { url } = await billingApi.portal({ organizationId: "org_1" });
+      const { url } = await billingApi.portal({ organizationId });
       window.location.href = url;
     } catch (err: any) {
       alert(err.message || "Erreur lors de l'ouverture du portail");

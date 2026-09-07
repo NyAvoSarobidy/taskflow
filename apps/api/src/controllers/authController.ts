@@ -66,6 +66,11 @@ export async function register(
       console.error("⚠️ Erreur envoi OTP :", err)
     );
 
+    // En mode dev, logger l'OTP dans la console pour le développement
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`\n🔑 OTP pour ${user.email} : ${otpCode}\n`);
+    }
+
     // Réponse
     res.status(201).json({
       message:
