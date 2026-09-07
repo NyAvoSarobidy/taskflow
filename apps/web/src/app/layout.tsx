@@ -1,3 +1,5 @@
+// apps/web/src/app/layout.tsx
+import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata = {
@@ -12,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
