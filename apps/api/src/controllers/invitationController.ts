@@ -106,7 +106,7 @@ export async function revokeInvitation(
       return res.status(401).json({ message: "Non authentifié" });
     }
 
-    await invitationService.revokeInvitation(invitationId, userId);
+    await invitationService.revokeInvitation(invitationId as string, userId);
 
     res.status(200).json({ message: "Invitation révoquée" });
   } catch (error) {
@@ -127,7 +127,7 @@ export async function resendInvitation(
       return res.status(401).json({ message: "Non authentifié" });
     }
 
-    const result = await invitationService.resendInvitation(invitationId, userId);
+    const result = await invitationService.resendInvitation(invitationId as string, userId);
 
     res.status(200).json({
       message: "Invitation renvoyée avec succès",
