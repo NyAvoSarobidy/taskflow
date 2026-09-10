@@ -3,7 +3,6 @@ import { Router } from "express";
 import { auth } from "../middlewares/auth";
 import { tenantIsolation } from "../middlewares/tenantIsolation";
 import Membership from "../models/Membership";
-import User from "../models/User";
 
 const router = Router();
 
@@ -19,16 +18,22 @@ router.get("/", async (req, res) => {
     }
 
     const memberships = await Membership.find({ organizationId })
-      .populate("userId", "email name createdAt")
+      .populate({
+        path: "userId",
+        select: "email name createdAt",
+      })
       .sort({ createdAt: 1 });
 
-    const members = memberships.map((m) => ({
-      _id: m.userId._id,
-      email: m.userId.email,
-      name: m.userId.name,
-      role: m.role,
-      createdAt: m.createdAt,
-    }));
+    const members = memberships.map((m) => {
+      const user = m.userId as any;
+      return {
+        _id: user?._id,
+        email: user?.email,
+        name: user?.name,
+        role: m.role,
+        createdAt: m.createdAt,
+      };
+    });
 
     res.status(200).json({ members });
   } catch (error: any) {

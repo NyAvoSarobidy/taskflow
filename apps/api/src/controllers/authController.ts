@@ -86,7 +86,9 @@ export async function register(
     // En mode dev, inclure l'OTP dans la réponse pour faciliter les tests
     if (process.env.NODE_ENV !== "production") {
       response.otpCode = otpCode;
-      console.log(`\n🔑 OTP pour ${user.email} : ${otpCode}\n`);
+      if (user) {
+        console.log(`\n🔑 OTP pour ${user.email} : ${otpCode}\n`);
+      }
     }
 
     res.status(201).json(response);
@@ -190,7 +192,9 @@ export async function resendOTP(
 
     if (process.env.NODE_ENV !== "production") {
       response.otpCode = otpCode;
-      console.log(`\n🔑 OTP pour ${user.email} : ${otpCode}\n`);
+      if (user) {
+        console.log(`\n🔑 OTP pour ${user.email} : ${otpCode}\n`);
+      }
     }
 
     res.status(200).json(response);

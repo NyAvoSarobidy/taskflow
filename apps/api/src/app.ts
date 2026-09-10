@@ -20,9 +20,23 @@ const app = express();
 
 //Middlewares globaux
 app.use(helmet());
+// CORS — Accepter plusieurs origines
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:3000",
+  "http://localhost:3001",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Autoriser les requêtes sans origine (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error("Non autorisé par CORS"));
+    },
     credentials: true,
   })
 );
